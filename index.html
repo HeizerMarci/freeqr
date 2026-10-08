@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Studio — QR-kód generátor</title>
+  <style>
+    :root {
+      --bg: #f4f6fa;
+      --panel: #ffffff;
+      --text: #182230;
+      --muted: #697586;
+      --accent: #3157d5;
+      --border: #e2e7ef;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top left, #e9efff 0, transparent 34%), var(--bg);
+    }
+    header {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 28px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo {
+      width: 42px; height: 42px; border-radius: 13px;
+      display: grid; place-items: center;
+      background: var(--accent); color: white; font-size: 23px; font-weight: 800;
+      box-shadow: 0 8px 18px #3157d533;
+    }
+    .brand { font-size: 19px; font-weight: 800; letter-spacing: -.5px; }
+    .brand small { display: block; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .2px; margin-top: 2px; }
+    main {
+      max-width: 1080px; margin: 12px auto 56px; padding: 0 24px;
+      display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr); gap: 24px;
+    }
+    .intro { grid-column: 1 / -1; margin-bottom: 4px; }
+    h1 { font-size: clamp(30px, 4vw, 42px); letter-spacing: -1.5px; line-height: 1.08; margin: 0 0 12px; }
+    .intro p { margin: 0; color: var(--muted); line-height: 1.65; max-width: 620px; }
+    .panel {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 22px;
+      padding: 26px; box-shadow: 0 12px 40px #1e2a4410;
+    }
+    .panel h2 { margin: 0 0 22px; font-size: 17px; letter-spacing: -.3px; }
+    label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 9px; }
+    textarea, input, select {
+      width: 100%; border: 1px solid #d7deea; background: #fff; color: var(--text);
+      border-radius: 11px; padding: 12px 13px; font: inherit; font-size: 14px; outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    textarea { resize: vertical; min-height: 112px; line-height: 1.5; }
+    textarea:focus, input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #3157d51a; }
+    .field { margin-bottom: 21px; }
+    .hint { color: var(--muted); font-size: 12px; margin-top: 8px; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .color-field { display: flex; align-items: center; gap: 10px; border: 1px solid #d7deea; border-radius: 11px; padding: 7px 10px; }
+    input[type="color"] { width: 30px; height: 30px; padding: 0; border: 0; background: none; cursor: pointer; }
+    .color-field span { font-size: 13px; color: var(--muted); }
+    .preview-panel { display: flex; flex-direction: column; align-items: center; }
+    .preview-panel h2 { align-self: flex-start; width: 100%; }
+    .qr-stage {
+      width: 100%; min-height: 330px; display: grid; place-items: center;
+      border: 1px dashed #d7deea; border-radius: 17px; padding: 24px;
+      background: linear-gradient(135deg, #f8faff, #f2f5fb);
+    }
+    #qrBox {
+      width: min(100%, 280px); aspect-ratio: 1; display: grid; place-items: center;
+      background: white; padding: 14px; border-radius: 10px;
+      box-shadow: 0 8px 26px #1e2a4414;
+    }
+    #qrBox canvas, #qrBox img { max-width: 100%; height: auto; display: block; }
+    .empty { text-align: center; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .actions { width: 100%; display: flex; gap: 10px; margin-top: 20px; }
+    button {
+      border: 0; border-radius: 12px; padding: 13px 16px; font: inherit; font-size: 14px;
+      font-weight: 750; cursor: pointer; transition: transform .15s, opacity .15s, box-shadow .15s;
+    }
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    .primary { background: var(--accent); color: #fff; flex: 1; box-shadow: 0 7px 16px #3157d526; }
+    .secondary { background: #edf1f8; color: #29364a; }
+    .status { min-height: 18px; margin-top: 12px; font-size: 12px; color: var(--muted); text-align: center; }
+    footer { text-align: center; color: #8791a2; font-size: 12px; padding: 0 20px 28px; }
+    @media (max-width: 760px) {
+      main { grid-template-columns: 1fr; padding: 0 16px; margin-top: 4px; }
+      header { padding: 20px 16px; }
+      .panel { padding: 20px; }
+      .intro { margin-bottom: 8px; }
+      .qr-stage { min-height: 290px; }
+    }
+    @media (max-width: 420px) { .two { grid-template-columns: 1fr; gap: 0; } .actions { flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">⌗</div>
+    <div class="brand">QR Studio<small>Egyszerű QR-kód generátor</small></div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <h1>Hozd létre a saját<br>QR-kódodat.</h1>
+      <p>Írd be a tartalmat, állítsd be a megjelenést, majd töltsd le a QR-kódot jó minőségű PNG-képként.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Beállítások</h2>
+      <div class="field">
+        <label for="content">Tartalom</label>
+        <textarea id="content" placeholder="https://pelda.hu vagy bármilyen szöveg…">https://example.com</textarea>
+        <div class="hint">Linket, sima szöveget vagy más QR-kódba illeszthető tartalmat is megadhatsz.</div>
+      </div>
+      <div class="field">
+        <label for="size">Képméret</label>
+        <select id="size">
+          <option value="256">256 × 256 px</option>
+          <option value="512" selected>512 × 512 px</option>
+          <option value="1024">1024 × 1024 px</option>
+        </select>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="foreground">QR-kód színe</label>
+          <div class="color-field"><input type="color" id="foreground" value="#182230"><span id="fgText">#182230</span></div>
+        </div>
+        <div class="field">
+          <label for="background">Háttérszín</label>
+          <div class="color-field"><input type="color" id="background" value="#ffffff"><span id="bgText">#ffffff</span></div>
+        </div>
+      </div>
+      <button class="secondary" id="reset" type="button">Alapbeállítások visszaállítása</button>
+    </section>
+
+    <section class="panel preview-panel">
+      <h2>Előnézet</h2>
+      <div class="qr-stage">
+        <div id="qrBox"><div class="empty">A QR-kód itt jelenik meg.</div></div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="download" disabled>↓ Letöltés PNG-ként</button>
+        <button class="secondary" id="copy" disabled>Másolás</button>
+      </div>
+      <div class="status" id="status" aria-live="polite">A QR-kód automatikusan frissül.</div>
+    </section>
+  </main>
+  <footer>A QR Studio a böngésződben fut. A QR-kód előállításához internetkapcsolat szükséges.</footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    const content = document.getElementById('content');
+    const size = document.getElementById('size');
+    const foreground = document.getElementById('foreground');
+    const background = document.getElementById('background');
+    const qrBox = document.getElementById('qrBox');
+    const download = document.getElementById('download');
+    const copy = document.getElementById('copy');
+    const status = document.getElementById('status');
+    let qr = null;
+
+    function generate() {
+      const value = content.value.trim();
+      document.getElementById('fgText').textContent = foreground.value;
+      document.getElementById('bgText').textContent = background.value;
+      qrBox.innerHTML = '';
+      if (!value) {
+        qrBox.innerHTML = '<div class="empty">Írj be egy szöveget vagy linket a QR-kód létrehozásához.</div>';
+        download.disabled = true;
+        copy.disabled = true;
+        status.textContent = 'Nincs megadva tartalom.';
+        qr = null;
+        return;
+      }
+      if (typeof QRCode === 'undefined') {
+        qrBox.innerHTML = '<div class="empty">A QR-kód könyvtár nem töltődött be.<br>Ellenőrizd az internetkapcsolatot.</div>';
+        download.disabled = true;
+        copy.disabled = true;
+        status.textContent = 'A generáláshoz internetkapcsolat szükséges.';
+        qr = null;
+        return;
+      }
+      const px = Number(size.value);
+      qrBox.style.background = background.value;
+      qrBox.innerHTML = '';
+      qr = new QRCode(qrBox, {
+        text: value,
+        width: px,
+        height: px,
+        colorDark: foreground.value,
+        colorLight: background.value,
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      download.disabled = false;
+      copy.disabled = false;
+      status.textContent = 'QR-kód elkészült · ' + px + ' × ' + px + ' px';
+    }
+
+    function getQrImage() {
+      return qrBox.querySelector('canvas') || qrBox.querySelector('img');
+    }
+
+    download.addEventListener('click', () => {
+      const source = getQrImage();
+      if (!source) return;
+      let dataUrl;
+      if (source.tagName.toLowerCase() === 'canvas') {
+        const out = document.createElement('canvas');
+        const px = Number(size.value);
+        out.width = px; out.height = px;
+        out.getContext('2d').drawImage(source, 0, 0, px, px);
+        dataUrl = out.toDataURL('image/png');
+      } else {
+        dataUrl = source.src;
+      }
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = 'qr-kod.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      status.textContent = 'A letöltés elindult.';
+    });
+
+    copy.addEventListener('click', async () => {
+      const source = getQrImage();
+      try {
+        let canvas;
+        if (source && source.tagName.toLowerCase() === 'canvas') canvas = source;
+        else if (source) {
+          canvas = document.createElement('canvas');
+          canvas.width = source.naturalWidth; canvas.height = source.naturalHeight;
+          canvas.getContext('2d').drawImage(source, 0, 0);
+        }
+        if (!canvas || !navigator.clipboard || !window.ClipboardItem) throw new Error('Nem támogatott');
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        status.textContent = 'A QR-kód a vágólapra másolva.';
+      } catch (e) {
+        status.textContent = 'A másolás nem támogatott ebben a böngészőben. Használd a PNG-letöltést.';
+      }
+    });
+
+    [content, size, foreground, background].forEach(el => {
+      el.addEventListener(el === content ? 'input' : 'change', generate);
+    });
+    document.getElementById('reset').addEventListener('click', () => {
+      content.value = 'https://example.com';
+      size.value = '512';
+      foreground.value = '#182230';
+      background.value = '#ffffff';
+      generate();
+    });
+    generate();
+  </script>
+</body>
+</html>
