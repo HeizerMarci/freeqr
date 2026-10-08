@@ -19,7 +19,7 @@
       min-height: 100vh;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
-      background: radial-gradient(circle at top left, #e9efff 0, transparent 34%), var(--bg);
+      background: var(--bg);
     }
     header {
       max-width: 1080px;
@@ -28,12 +28,6 @@
       display: flex;
       align-items: center;
       gap: 12px;
-    }
-    .logo {
-      width: 42px; height: 42px; border-radius: 13px;
-      display: grid; place-items: center;
-      background: var(--accent); color: white; font-size: 23px; font-weight: 800;
-      box-shadow: 0 8px 18px #3157d533;
     }
     .brand { font-size: 19px; font-weight: 800; letter-spacing: -.5px; }
     .brand small { display: block; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .2px; margin-top: 2px; }
@@ -45,14 +39,14 @@
     h1 { font-size: clamp(30px, 4vw, 42px); letter-spacing: -1.5px; line-height: 1.08; margin: 0 0 12px; }
     .intro p { margin: 0; color: var(--muted); line-height: 1.65; max-width: 620px; }
     .panel {
-      background: var(--panel); border: 1px solid var(--border); border-radius: 22px;
-      padding: 26px; box-shadow: 0 12px 40px #1e2a4410;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+      padding: 26px;
     }
     .panel h2 { margin: 0 0 22px; font-size: 17px; letter-spacing: -.3px; }
     label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 9px; }
     textarea, input, select {
-      width: 100%; border: 1px solid #d7deea; background: #fff; color: var(--text);
-      border-radius: 11px; padding: 12px 13px; font: inherit; font-size: 14px; outline: none;
+      width: 100%; border: 1px solid #cbd2dc; background: #fff; color: var(--text);
+      border-radius: 6px; padding: 12px 13px; font: inherit; font-size: 14px; outline: none;
       transition: border-color .15s, box-shadow .15s;
     }
     textarea { resize: vertical; min-height: 112px; line-height: 1.5; }
@@ -67,19 +61,18 @@
     .preview-panel h2 { align-self: flex-start; width: 100%; }
     .qr-stage {
       width: 100%; min-height: 330px; display: grid; place-items: center;
-      border: 1px dashed #d7deea; border-radius: 17px; padding: 24px;
-      background: linear-gradient(135deg, #f8faff, #f2f5fb);
+      border: 1px dashed #d7deea; border-radius: 10px; padding: 24px;
+      background: #f8f9fb;
     }
     #qrBox {
       width: min(100%, 280px); aspect-ratio: 1; display: grid; place-items: center;
-      background: white; padding: 14px; border-radius: 10px;
-      box-shadow: 0 8px 26px #1e2a4414;
+      background: white; padding: 14px; border-radius: 4px;
     }
     #qrBox canvas, #qrBox img { max-width: 100%; height: auto; display: block; }
     .empty { text-align: center; color: var(--muted); font-size: 13px; line-height: 1.6; }
     .actions { width: 100%; display: flex; gap: 10px; margin-top: 20px; }
     button {
-      border: 0; border-radius: 12px; padding: 13px 16px; font: inherit; font-size: 14px;
+      border: 0; border-radius: 6px; padding: 13px 16px; font: inherit; font-size: 14px;
       font-weight: 750; cursor: pointer; transition: transform .15s, opacity .15s, box-shadow .15s;
     }
     button:hover { transform: translateY(-1px); }
@@ -101,14 +94,13 @@
 </head>
 <body>
   <header>
-    <div class="logo">⌗</div>
-    <div class="brand">QR Studio<small>Egyszerű QR-kód generátor</small></div>
+    <div class="brand">QR-kód generátor<small>QR-kód készítése és exportálása</small></div>
   </header>
 
   <main>
     <section class="intro">
       <h1>Hozd létre a saját<br>QR-kódodat.</h1>
-      <p>Írd be a tartalmat, állítsd be a megjelenést, majd töltsd le a QR-kódot jó minőségű PNG-képként.</p>
+      <p>Írd be a tartalmat, állítsd be a megjelenést, majd exportáld PNG- vagy SVG-fájlként.</p>
     </section>
 
     <section class="panel">
@@ -145,106 +137,138 @@
         <div id="qrBox"><div class="empty">A QR-kód itt jelenik meg.</div></div>
       </div>
       <div class="actions">
-        <button class="primary" id="download" disabled>↓ Letöltés PNG-ként</button>
-        <button class="secondary" id="copy" disabled>Másolás</button>
+        <button class="primary" id="downloadPng" disabled>Letöltés PNG-ként</button>
+        <button class="secondary" id="downloadSvg" disabled>Exportálás SVG-be</button>
       </div>
       <div class="status" id="status" aria-live="polite">A QR-kód automatikusan frissül.</div>
     </section>
   </main>
   <footer>A QR Studio a böngésződben fut. A QR-kód előállításához internetkapcsolat szükséges.</footer>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script>
     const content = document.getElementById('content');
     const size = document.getElementById('size');
     const foreground = document.getElementById('foreground');
     const background = document.getElementById('background');
     const qrBox = document.getElementById('qrBox');
-    const download = document.getElementById('download');
-    const copy = document.getElementById('copy');
+    const downloadPng = document.getElementById('downloadPng');
+    const downloadSvg = document.getElementById('downloadSvg');
     const status = document.getElementById('status');
     let qr = null;
+
+    function buildSvg(matrix, px, dark, light) {
+      const count = matrix.length;
+      const quiet = 4;
+      const total = count + quiet * 2;
+      let parts = [`<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="0 0 ${total} ${total}" shape-rendering="crispEdges">`];
+      parts.push(`<rect width="${total}" height="${total}" fill="${light}"/>`);
+      for (let row = 0; row < count; row++) {
+        for (let col = 0; col < count; col++) {
+          if (matrix[row][col]) parts.push(`<rect x="${col + quiet}" y="${row + quiet}" width="1" height="1" fill="${dark}"/>`);
+        }
+      }
+      parts.push('</svg>');
+      return parts.join('');
+    }
+
+    function makeMatrix() {
+      const value = content.value.trim();
+      if (!value || typeof qrcode !== 'function') return null;
+      const instance = qrcode(0, 'H');
+      instance.addData(value);
+      instance.make();
+      const count = instance.getModuleCount();
+      const matrix = [];
+      for (let row = 0; row < count; row++) {
+        const line = [];
+        for (let col = 0; col < count; col++) line.push(instance.isDark(row, col));
+        matrix.push(line);
+      }
+      return matrix;
+    }
 
     function generate() {
       const value = content.value.trim();
       document.getElementById('fgText').textContent = foreground.value;
       document.getElementById('bgText').textContent = background.value;
       qrBox.innerHTML = '';
+      qr = null;
       if (!value) {
         qrBox.innerHTML = '<div class="empty">Írj be egy szöveget vagy linket a QR-kód létrehozásához.</div>';
-        download.disabled = true;
-        copy.disabled = true;
+        downloadPng.disabled = downloadSvg.disabled = true;
         status.textContent = 'Nincs megadva tartalom.';
-        qr = null;
         return;
       }
-      if (typeof QRCode === 'undefined') {
-        qrBox.innerHTML = '<div class="empty">A QR-kód könyvtár nem töltődött be.<br>Ellenőrizd az internetkapcsolatot.</div>';
-        download.disabled = true;
-        copy.disabled = true;
+      if (typeof qrcode !== 'function') {
+        qrBox.innerHTML = '<div class="empty">A QR-kód könyvtár nem töltődött be. Ellenőrizd az internetkapcsolatot.</div>';
+        downloadPng.disabled = downloadSvg.disabled = true;
         status.textContent = 'A generáláshoz internetkapcsolat szükséges.';
-        qr = null;
         return;
       }
-      const px = Number(size.value);
-      qrBox.style.background = background.value;
-      qrBox.innerHTML = '';
-      qr = new QRCode(qrBox, {
-        text: value,
-        width: px,
-        height: px,
-        colorDark: foreground.value,
-        colorLight: background.value,
-        correctLevel: QRCode.CorrectLevel.H
-      });
-      download.disabled = false;
-      copy.disabled = false;
-      status.textContent = 'QR-kód elkészült · ' + px + ' × ' + px + ' px';
-    }
-
-    function getQrImage() {
-      return qrBox.querySelector('canvas') || qrBox.querySelector('img');
-    }
-
-    download.addEventListener('click', () => {
-      const source = getQrImage();
-      if (!source) return;
-      let dataUrl;
-      if (source.tagName.toLowerCase() === 'canvas') {
-        const out = document.createElement('canvas');
+      try {
+        const matrix = makeMatrix();
         const px = Number(size.value);
-        out.width = px; out.height = px;
-        out.getContext('2d').drawImage(source, 0, 0, px, px);
-        dataUrl = out.toDataURL('image/png');
-      } else {
-        dataUrl = source.src;
+        const svg = buildSvg(matrix, px, foreground.value, background.value);
+        qr = { matrix, svg, px };
+        qrBox.style.background = background.value;
+        const preview = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        preview.setAttribute('viewBox', `0 0 ${matrix.length + 8} ${matrix.length + 8}`);
+        preview.setAttribute('width', '100%');
+        preview.setAttribute('height', '100%');
+        preview.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        preview.setAttribute('shape-rendering', 'crispEdges');
+        const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%'); bg.setAttribute('fill', background.value); preview.appendChild(bg);
+        matrix.forEach((line, row) => line.forEach((dark, col) => {
+          if (!dark) return;
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', col + 4); rect.setAttribute('y', row + 4);
+          rect.setAttribute('width', 1); rect.setAttribute('height', 1);
+          rect.setAttribute('fill', foreground.value); preview.appendChild(rect);
+        }));
+        qrBox.appendChild(preview);
+        downloadPng.disabled = downloadSvg.disabled = false;
+        status.textContent = 'QR-kód elkészült · ' + px + ' × ' + px + ' px';
+      } catch (error) {
+        qrBox.innerHTML = '<div class="empty">A megadott tartalom túl hosszú vagy nem állítható elő QR-kódként.</div>';
+        downloadPng.disabled = downloadSvg.disabled = true;
+        status.textContent = 'Nem sikerült létrehozni a QR-kódot.';
       }
+    }
+
+    function saveBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = 'qr-kod.png';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      status.textContent = 'A letöltés elindult.';
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    downloadSvg.addEventListener('click', () => {
+      if (!qr) return;
+      saveBlob(new Blob([qr.svg], { type: 'image/svg+xml;charset=utf-8' }), 'qr-kod.svg');
+      status.textContent = 'Az SVG-export elindult.';
     });
 
-    copy.addEventListener('click', async () => {
-      const source = getQrImage();
-      try {
-        let canvas;
-        if (source && source.tagName.toLowerCase() === 'canvas') canvas = source;
-        else if (source) {
-          canvas = document.createElement('canvas');
-          canvas.width = source.naturalWidth; canvas.height = source.naturalHeight;
-          canvas.getContext('2d').drawImage(source, 0, 0);
-        }
-        if (!canvas || !navigator.clipboard || !window.ClipboardItem) throw new Error('Nem támogatott');
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        status.textContent = 'A QR-kód a vágólapra másolva.';
-      } catch (e) {
-        status.textContent = 'A másolás nem támogatott ebben a böngészőben. Használd a PNG-letöltést.';
-      }
+    downloadPng.addEventListener('click', () => {
+      if (!qr) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = qr.px;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = background.value;
+      ctx.fillRect(0, 0, qr.px, qr.px);
+      const matrix = qr.matrix;
+      const quiet = 4;
+      const unit = qr.px / (matrix.length + quiet * 2);
+      ctx.fillStyle = foreground.value;
+      matrix.forEach((line, row) => line.forEach((dark, col) => {
+        if (dark) ctx.fillRect((col + quiet) * unit, (row + quiet) * unit, unit, unit);
+      }));
+      canvas.toBlob(blob => {
+        if (blob) saveBlob(blob, 'qr-kod.png');
+        status.textContent = 'A PNG-letöltés elindult.';
+      }, 'image/png');
     });
 
     [content, size, foreground, background].forEach(el => {
